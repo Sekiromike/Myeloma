@@ -93,12 +93,34 @@ REGIMEN_PAL = px.colors.qualitative.Pastel + px.colors.qualitative.Set2
 def _load_all():
     base = Path(__file__).resolve().parent
     paths = auto_discover_paths(base)
+
+    # Diagnostics for cloud debugging
+    if 'simulation' not in paths:
+        import os
+        files_here = os.listdir(base)
+        outputs_dir = base / 'outputs'
+        outputs_files = os.listdir(outputs_dir) if outputs_dir.exists() else []
+        raise FileNotFoundError(
+            f"Could not find simulation CSV.\n"
+            f"  base dir = {base}\n"
+            f"  files in base = {files_here}\n"
+            f"  outputs/ contents = {outputs_files}\n"
+            f"  discovered paths = {paths}"
+        )
+
+    if 'params' not in paths:
+        raise FileNotFoundError(f"params.yaml not found. Discovered: {paths}")
+
     df   = load_simulation(paths['simulation'])
     par  = load_params(paths['params'])
     regs = load_regimens_yaml(paths['regimens']) if 'regimens' in paths else {}
     return df, par, regs, paths
 
-df, params, regimens_yaml, data_paths = _load_all()
+try:
+    df, params, regimens_yaml, data_paths = _load_all()
+except FileNotFoundError as e:
+    st.error(f"🚨 Data files not found. Details:\n\n```\n{e}\n```")
+    st.stop()
 
 # ── Sidebar ──────────────────────────────────────────────────────
 with st.sidebar:

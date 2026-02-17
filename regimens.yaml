@@ -1,0 +1,230 @@
+regimens:
+  # --- 1L Transplant Eligible (TE) ---
+  - name: "VRd"
+    line: "1L"
+    eligibility: "TE"
+    components: ["Bortezomib", "Lenalidomide", "Dexamethasone"]
+    approval_year: 2017 # Broad NCCN adoption / SWOG S0777 full pub
+    pfs_median: 41.0
+    pfs_unit: "months"
+    citation: "Durie et al. (SWOG S0777), Lancet 2017" # Updated follow-up often cited
+    weibull_params:
+      comment: "Derived from median PFS=41m"
+    adoption:
+      peak_share: 0.65
+      speed: 1.5 # Fast uptake as standard of care
+      time_to_peak: 3.0
+
+  - name: "D-VRd"
+    line: "1L"
+    eligibility: "TE"
+    components: ["Daratumumab", "Bortezomib", "Lenalidomide", "Dexamethasone"]
+    approval_year: 2024 # PERSEUS FDA Approval / NCCN Cat 1
+    pfs_median: 80.0 # Estimate from PERSEUS/GRIFFIN curves (often NR or significantly > VRd)
+    pfs_unit: "months"
+    citation: "Sonneveld et al. (PERSEUS), NEJM 2024; Voorhees et al. (GRIFFIN)"
+    hazard_ratio: 0.42 # vs VRd (PERSEUS)
+    adoption:
+      peak_share: 0.70 # Projected new standard
+      speed: 2.0 # Very rapid anticipated uptake
+      time_to_peak: 2.0
+
+  - name: "VTd"
+    line: "1L"
+    eligibility: "TE"
+    components: ["Bortezomib", "Thalidomide", "Dexamethasone"]
+    approval_year: 2010 # Historical standard in Europe, included for completeness
+    pfs_median: 30.0 
+    pfs_unit: "months"
+    citation: "Cavo et al. (GIMEMA), Lancet 2010"
+    adoption:
+        peak_share: 0.2
+        speed: 1.0
+
+  - name: "D-VTd"
+    line: "1L"
+    eligibility: "TE"
+    components: ["Daratumumab", "Bortezomib", "Thalidomide", "Dexamethasone"]
+    approval_year: 2019
+    pfs_median: 60.0 # Estimated based on CASSIOPEIA
+    citation: "Moreau et al. (CASSIOPEIA), Lancet 2019"
+    hazard_ratio: 0.47 # vs VTd
+    adoption:
+        peak_share: 0.3
+        speed: 1.2
+
+  # --- 1L Transplant Ineligible (TI) ---
+  - name: "DRd"
+    line: "1L"
+    eligibility: "TI"
+    components: ["Daratumumab", "Lenalidomide", "Dexamethasone"]
+    approval_year: 2019
+    pfs_median: 61.9
+    pfs_unit: "months"
+    citation: "Facon et al. (MAIA), Lancet Oncol 2021 update"
+    hazard_ratio: 0.56 # vs Rd
+    adoption:
+        peak_share: 0.45 # ~32% to 45% based on real world data
+        speed: 1.5
+
+  - name: "VRd-lite"
+    line: "1L"
+    eligibility: "TI"
+    components: ["Bortezomib", "Lenalidomide", "Dexamethasone"]
+    approval_year: 2018 # NCCN adoption
+    pfs_median: 35.1
+    citation: "O'Donnell et al., JCO 2018"
+    adoption:
+        peak_share: 0.35
+        speed: 1.0
+
+  - name: "Rd"
+    line: "1L"
+    eligibility: "Both" # Often 1L TI standard or maintenance
+    components: ["Lenalidomide", "Dexamethasone"]
+    approval_year: 2015
+    pfs_median: 34.4
+    citation: "Facon et al. (FIRST), NEJM 2014 / Blood 2018"
+    adoption:
+        peak_share: 0.40
+        speed: 1.0
+
+  # --- 2L / Relapsed ---
+  - name: "DVd"
+    line: "2L"
+    eligibility: "Both"
+    components: ["Daratumumab", "Bortezomib", "Dexamethasone"]
+    approval_year: 2016
+    pfs_median: 16.7
+    citation: "Palumbo et al. (CASTOR), NEJM 2016"
+    hazard_ratio: 0.39 # vs Vd
+    adoption:
+        peak_share: 0.30
+        speed: 1.5
+
+  - name: "DRd_2L"
+    line: "2L"
+    eligibility: "Both"
+    components: ["Daratumumab", "Lenalidomide", "Dexamethasone"]
+    approval_year: 2016
+    pfs_median: 44.5
+    citation: "Dimopoulos et al. (POLLUX), NEJM 2016 / Haematologica 2021"
+    hazard_ratio: 0.37 # vs Rd
+    adoption:
+        peak_share: 0.40
+        speed: 1.5
+
+  - name: "DKd"
+    line: "2L"
+    eligibility: "Both"
+    components: ["Daratumumab", "Carfilzomib", "Dexamethasone"]
+    approval_year: 2020
+    pfs_median: 28.6
+    citation: "Dimopoulos et al. (CANDOR), Lancet 2020"
+    hazard_ratio: 0.63 # vs Kd
+    adoption:
+        peak_share: 0.25
+        speed: 1.2
+
+  - name: "Kd"
+    line: "2L"
+    eligibility: "Both"
+    components: ["Carfilzomib", "Dexamethasone"]
+    approval_year: 2016
+    pfs_median: 18.7
+    citation: "Dimopoulos et al. (ENDEAVOR), Lancet Oncol 2016"
+    adoption:
+        peak_share: 0.20
+        speed: 1.0
+
+  - name: "PVd"
+    line: "2L"
+    eligibility: "Both"
+    components: ["Pomalidomide", "Bortezomib", "Dexamethasone"]
+    approval_year: 2017
+    pfs_median: 11.2
+    citation: "Richardson et al. (OPTIMISMM), Lancet Oncol 2019"
+    adoption:
+        peak_share: 0.15
+        speed: 1.0
+
+  - name: "Isa-Pd"
+    line: "3L"
+    eligibility: "Both"
+    components: ["Isatuximab", "Pomalidomide", "Dexamethasone"]
+    approval_year: 2020
+    pfs_median: 11.5
+    citation: "Attal et al. (ICARIA-MM), Lancet 2019"
+    adoption:
+        peak_share: 0.15
+        speed: 1.2
+
+  - name: "Isa-Kd"
+    line: "2L"
+    eligibility: "Both"
+    components: ["Isatuximab", "Carfilzomib", "Dexamethasone"]
+    approval_year: 2021
+    pfs_median: 35.7 # PFS can vary by cut, but significant improvement over Kd
+    citation: "Moreau et al. (IKEMA), Lancet 2021"
+    adoption:
+        peak_share: 0.10
+        speed: 1.2
+
+  # --- Late Line (3L+, 4L+) / Novel Therapies ---
+  - name: "Ide-cel"
+    line: "4L+"
+    eligibility: "Both"
+    components: ["Idecabtagene vicleucel"]
+    approval_year: 2021
+    pfs_median: 8.8
+    citation: "Munshi et al. (KarMMa), NEJM 2021"
+    adoption:
+        peak_share: 0.15
+        speed: 1.0
+
+  - name: "Cilta-cel"
+    line: "4L+"
+    eligibility: "Both"
+    components: ["Ciltacabtagene autoleucel"]
+    approval_year: 2022
+    pfs_median: 34.9 # From CARTITUDE-1 final analysis roughly
+    citation: "Berdeja et al. (CARTITUDE-1), Lancet 2021"
+    adoption:
+        peak_share: 0.35 # High demand for Cilta-cel
+        speed: 1.8
+
+  - name: "Teclistamab"
+    line: "4L+"
+    eligibility: "Both"
+    components: ["Teclistamab"]
+    approval_year: 2022
+    pfs_median: 11.3
+    citation: "Moreau et al. (MajesTEC-1), NEJM 2022"
+    adoption:
+        peak_share: 0.25
+        speed: 1.5
+    
+  - name: "Talquetamab"
+    line: "4L+"
+    eligibility: "Both"
+    components: ["Talquetamab"]
+    approval_year: 2023
+    pfs_median: 7.5
+    citation: "Chari et al. (MonumenTAL-1), NEJM 2023"
+    adoption:
+        peak_share: 0.15
+        speed: 1.5
+
+  - name: "Selinexor-Vd"
+    line: "2L"
+    eligibility: "Both"
+    components: ["Selinexor", "Bortezomib", "Dexamethasone"]
+    approval_year: 2020
+    pfs_median: 13.9
+    citation: "Grosicki et al. (BOSTON), Lancet 2020"
+    adoption:
+        peak_share: 0.05
+        speed: 0.8
+
+defaults:
+    weibull_shape: 1.3 # Default shape if not specified (oncology typically 1.1-1.4 for PFS)
