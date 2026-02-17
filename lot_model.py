@@ -1,16 +1,7 @@
 """
 Line-of-Therapy (LoT) Patient Stock Model for US Multiple Myeloma.
-
-This model simulates the flow of patients through 1L, 2L, and 3L+ lines of therapy
-based on monthly incidence data and mechanistic parameters.
-
-Parameters (placeholders in params.yaml):
-- uptake: treated_fraction (share of incidence treated), delays
-- attrition: probabilities of reaching next line (p_reach_2l, etc.)
-- durations: median duration of therapy (converts to progression hazard)
-- mortality: monthly death hazards on treatment
-
-Note: Parameters are currently placeholders and will be calibrated later.
+Updated to support Regimen-Specific Cohorts, Parametric Survival, and Dynamic Adoption.
+Includes Incidence Projection to 2026.
 """
 
 import pandas as pd
@@ -18,212 +9,284 @@ import numpy as np
 import yaml
 from pathlib import Path
 import logging
+from dataclasses import dataclass, field
+from typing import List, Dict
+
+# Local imports
+try:
+    from Myeloma.scientific_utils import load_regimens, Regimen, WeibullParams
+    from Myeloma.adoption import AdoptionEngine
+except ImportError:
+    from scientific_utils import load_regimens, Regimen, WeibullParams
+    from adoption import AdoptionEngine
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+@dataclass
+class Cohort:
+    id: str
+    entry_date: pd.Timestamp
+    line: str # 1L, 2L, 3L, 4L+
+    eligibility: str
+    regimen: Regimen
+    initial_size: float
+    current_size: float
+    
+    def update(self, current_date: pd.Timestamp, mortality_rate: float) -> tuple[float, float]:
+        if self.current_size <= 1e-6:
+            return 0.0, 0.0
+            
+        mo_diff = (current_date.year - self.entry_date.year) * 12 + (current_date.month - self.entry_date.month)
+        
+        prob_prog = self.regimen.weibull.monthly_transition_prob(float(mo_diff))
+        prob_death = mortality_rate 
+        
+        total_prob = prob_prog + prob_death
+        if total_prob > 1.0:
+            scale = 1.0 / total_prob
+            prob_prog *= scale
+            prob_death *= scale
+            
+        n_prog = self.current_size * prob_prog
+        n_death = self.current_size * prob_death
+        
+        self.current_size = max(0, self.current_size - (n_prog + n_death))
+        return n_prog, n_death
+
 def load_config(config_path):
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
 
-def calculate_hazard(median_duration):
-    """Converts median duration (months) to monthly hazard rate."""
-    if median_duration <= 0:
-        return 1.0 # Immediate progression if duration is 0
-    return np.log(2) / median_duration
-
-def run_simulation(df, params):
-    """
-    Simulates patient stocks over time.
-    """
-    logger.info("Starting simulation...")
+def run_simulation(df_inc, params, regimens, events):
+    logger.info("Initializing Simulation...")
     
-    # Sort by date to ensure chronological order
-    df = df.sort_values('Date').reset_index(drop=True)
-    n_months = len(df)
-    dates = df['Date']
-    new_dx = df['Combined_Incidence'].values
+    adoption_engine = AdoptionEngine(regimens, events['events'])
     
-    # Initialize stock arrays
-    on_1l = np.zeros(n_months)
-    on_2l = np.zeros(n_months)
-    on_3l_plus = np.zeros(n_months)
+    start_date = df_inc['Date'].min()
+    end_date = df_inc['Date'].max()
+    dates = pd.date_range(start_date, end_date, freq='MS')
     
-    # Unpack params
-    treated_fraction = params['uptake']['treated_fraction']
-    delay_months = int(params['uptake']['dx_to_1l_delay_months'])
+    cohorts: List[Cohort] = []
+    results_list = []
     
-    # Attrition probs
+    frac_te = 0.4 
+    delay_months = int(params['uptake'].get('dx_to_1l_delay_months', 1))
     p_reach_2l = params['attrition']['p_reach_2l']
-    p_reach_3l = params['attrition']['p_reach_3l_given_2l']
+    p_reach_3l = params['attrition'].get('p_reach_3l_given_2l', 0.6)
+    p_reach_4l = 0.5 
     
-    # Hazards (progression)
-    h1 = calculate_hazard(params['durations_months_median']['1l'])
-    h2 = calculate_hazard(params['durations_months_median']['2l'])
-    h3 = calculate_hazard(params['durations_months_median']['3l_plus'])
+    inc_map = df_inc.set_index('Date')['Combined_Incidence'].to_dict()
     
-    # Hazards (mortality)
-    d1 = params['mortality']['monthly_death_hazard_1l']
-    d2 = params['mortality']['monthly_death_hazard_2l']
-    d3 = params['mortality']['monthly_death_hazard_3l_plus']
+    logger.info(f"Simulating {len(dates)} months from {start_date.date()} to {end_date.date()}...")
     
-    # Simulation Loop
-    for t in range(n_months):
-        # 1. Inflows
-        # Starts 1L
-        if t >= delay_months:
-            starts_1l = new_dx[t - delay_months] * treated_fraction
-        else:
-            starts_1l = 0
+    for i, current_date in enumerate(dates):
+        # 1. NEW 1L STARTS
+        diagnosis_date = current_date - pd.DateOffset(months=delay_months)
+        new_cases = inc_map.get(diagnosis_date, 0)
+        
+        treated_fraction = params['uptake']['treated_fraction']
+        n_started = new_cases * treated_fraction
+        
+        n_te = n_started * frac_te
+        n_ti = n_started * (1 - frac_te)
+        
+        shares_1l_te = adoption_engine.get_market_share(current_date, "1L", "TE")
+        shares_1l_ti = adoption_engine.get_market_share(current_date, "1L", "TI")
+        
+        new_cohorts_this_step = []
+
+        def create_cohorts(n_total, shares, line, elig):
+            for r_name, share in shares.items():
+                if share > 0 and r_name in regimens:
+                    size = n_total * share
+                    if size > 1e-4:
+                        new_cohorts_this_step.append(Cohort(
+                            id=f"{current_date.date()}_{line}_{elig}_{r_name}",
+                            entry_date=current_date,
+                            line=line,
+                            eligibility=elig,
+                            regimen=regimens[r_name],
+                            initial_size=size,
+                            current_size=size
+                        ))
+        
+        create_cohorts(n_te, shares_1l_te, "1L", "TE")
+        create_cohorts(n_ti, shares_1l_ti, "1L", "TI")
+        
+        # 2. UPDATE EXISTING COHORTS
+        pool_2l_needed = 0
+        pool_3l_needed = 0
+        pool_4l_needed = 0
+        
+        monthly_stats = {'Date': current_date, 'New_Starts_1L': n_started}
+        
+        cohorts.extend(new_cohorts_this_step)
+        
+        for c in cohorts:
+            if c.current_size <= 1e-6:
+                continue
+                
+            if "1L" in c.line: m_rate = params['mortality']['monthly_death_hazard_1l']
+            elif "2L" in c.line: m_rate = params['mortality']['monthly_death_hazard_2l']
+            else: m_rate = params['mortality']['monthly_death_hazard_3l_plus']
             
-        # 2. Outflows (calculated from current stock)
-        # Note: Depending on discretization (start vs end of month), using t-1 for stock is standard.
-        # Here we update t based on t-1. So simulate t=0 (initial) separately or handle t-1 access.
-        
-        if t == 0:
-            # Initial state
-            # Assuming 0 stocks at t=0 derived from t=0 inflows only
-            # Or simpler: Euler integration steps: Stock[t] = Stock[t-1] + In - Out
+            n_prog, n_death = c.update(current_date, m_rate)
             
-            # For t=0, we define stocks as just the inflows (assuming previous stocks were 0)
-            on_1l[t] = max(0, starts_1l)
-            on_2l[t] = 0
-            on_3l_plus[t] = 0
-            continue
+            if "1L" in c.line: pool_2l_needed += n_prog
+            elif "2L" in c.line: pool_3l_needed += n_prog
+            elif "3L" in c.line: pool_4l_needed += n_prog
             
-        # For t > 0, use t-1 stocks
-        prev_n1 = on_1l[t-1]
-        prev_n2 = on_2l[t-1]
-        prev_n3 = on_3l_plus[t-1]
+            k = f"{c.line}_{c.regimen.name}"
+            monthly_stats[k] = monthly_stats.get(k, 0) + c.current_size
+            lk = f"Total_{c.line}"
+            monthly_stats[lk] = monthly_stats.get(lk, 0) + c.current_size
+
+        # 3. GENERATE NEXT LINES
+        n_start_2l = pool_2l_needed * p_reach_2l
+        if n_start_2l > 0.1:
+            shares = adoption_engine.get_market_share(current_date, "2L", "Both")
+            for r_name, share in shares.items():
+                if share > 0 and r_name in regimens:
+                    size = n_start_2l * share
+                    cohorts.append(Cohort(
+                        id=f"{current_date.date()}_2L_Both_{r_name}",
+                        entry_date=current_date,
+                        line="2L",
+                        eligibility="Both",
+                        regimen=regimens[r_name],
+                        initial_size=size,
+                        current_size=size
+                    ))
+
+        n_start_3l = pool_3l_needed * p_reach_3l
+        if n_start_3l > 0.1:
+            shares = adoption_engine.get_market_share(current_date, "3L", "Both")
+            for r_name, share in shares.items():
+                if share > 0 and r_name in regimens:
+                    size = n_start_3l * share
+                    cohorts.append(Cohort(
+                        id=f"{current_date.date()}_3L_Both_{r_name}",
+                        entry_date=current_date,
+                        line="3L",
+                        eligibility="Both",
+                        regimen=regimens[r_name],
+                        initial_size=size,
+                        current_size=size
+                    ))
+                    
+        n_start_4l = pool_4l_needed * p_reach_4l
+        if n_start_4l > 0.1:
+            shares = adoption_engine.get_market_share(current_date, "4L+", "Both")
+            for r_name, share in shares.items():
+                if share > 0 and r_name in regimens:
+                    size = n_start_4l * share
+                    cohorts.append(Cohort(
+                        id=f"{current_date.date()}_4L+_Both_{r_name}",
+                        entry_date=current_date,
+                        line="4L+",
+                        eligibility="Both",
+                        regimen=regimens[r_name],
+                        initial_size=size,
+                        current_size=size
+                    ))
         
-        # 1L Flows
-        prog_1l = prev_n1 * h1
-        death_1l = prev_n1 * d1
-        
-        # 2L Flows
-        starts_2l = prog_1l * p_reach_2l
-        prog_2l = prev_n2 * h2
-        death_2l = prev_n2 * d2
-        
-        # 3L+ Flows
-        starts_3l = prog_2l * p_reach_3l
-        prog_3l = prev_n3 * h3 # Represents failure/terminal event or cycling within 3L+ bucket?
-                               # Model spec says "prog3 = N3 * h3", usually implies leaving the stock.
-                               # If 3L+ is the final state, where do they go? Death or off-treatment?
-                               # We will follow the formula: outflow = prog3 + death3.
-        death_3l = prev_n3 * d3
-        
-        # Update Stocks with guard
-        on_1l[t] = max(0, prev_n1 + starts_1l - (prog_1l + death_1l))
-        on_2l[t] = max(0, prev_n2 + starts_2l - (prog_2l + death_2l))
-        on_3l_plus[t] = max(0, prev_n3 + starts_3l - (prog_3l + death_3l))
-        
-    # Compile results
-    results = pd.DataFrame({
-        'Date': dates,
-        'NewDx': new_dx,
-        'On_1L': on_1l,
-        'On_2L': on_2l,
-        'On_3L_plus': on_3l_plus
-    })
-    
-    results['On_Treatment_Total'] = results['On_1L'] + results['On_2L'] + results['On_3L_plus']
-    
-    logger.info("Simulation complete.")
-    return results
+        if i % 12 == 0:
+            cohorts = [c for c in cohorts if c.current_size > 1e-4]
+            
+        results_list.append(monthly_stats)
+
+    df_res = pd.DataFrame(results_list).fillna(0)
+    return df_res
 
 def main():
     base_dir = Path(__file__).resolve().parent
-    project_root = base_dir # Since script is in Myeloma/, parent is correct? Ensure params.yaml location.
     
-    # Check if we are in Myeloma/ subdir or root
     if (base_dir / "params.yaml").exists():
         params_path = base_dir / "params.yaml"
-        # root is base_dir
-    elif (base_dir.parent / "params.yaml").exists():
+    else:
         params_path = base_dir.parent / "params.yaml"
-        base_dir = base_dir.parent # Set base to project root
-    else:
-        raise FileNotFoundError("params.yaml not found.")
+
+    if not params_path.exists():
+        raise FileNotFoundError(f"params.yaml not found in {base_dir} or parent")
+
+    root_dir = base_dir.parent 
+    regimens_path = root_dir / "regimens.yaml"
+    events_path = root_dir / "events.yaml"
+    
+    if not regimens_path.exists():
+        regimens_path = base_dir / "regimens.yaml"
+        if not regimens_path.exists():
+             raise FileNotFoundError(f"regimens.yaml not found")
+             
+    if not events_path.exists():
+         events_path = base_dir / "events.yaml"
+
+    inc_file = root_dir / "outputs/uscs_myeloma_incidence_monthly.csv"
+    if not inc_file.exists():
+        inc_file = root_dir / "Myeloma/outputs/uscs_myeloma_incidence_monthly.csv"
+    if not inc_file.exists():
+        search = list(root_dir.glob("**/uscs_myeloma_incidence_monthly.csv"))
+        if search: inc_file = search[0]
         
-    # Input File location
-    # Try 'epi outputs' first, then 'outputs'
-    incidence_file = base_dir / "Myeloma/epi outputs/uscs_myeloma_incidence_monthly.csv"
-    if not incidence_file.exists():
-        incidence_file = base_dir / "Myeloma/outputs/uscs_myeloma_incidence_monthly.csv"
-        
-    if not incidence_file.exists():
-        # Fallback for if script is running from root and path logic differs
-        incidence_file = base_dir / "outputs/uscs_myeloma_incidence_monthly.csv"
-        
-    if not incidence_file.exists():
-        raise FileNotFoundError(f"Monthly incidence file not found. Checked 'epi outputs' and 'outputs'.")
-        
-    # Load inputs
-    logger.info(f"Loading parameters from {params_path}")
+    if not inc_file.exists():
+        logger.error("Incidence file not found.")
+        return
+
+    logger.info(f"Loading config from {root_dir}")
     params = load_config(params_path)
+    regimens_data = load_config(regimens_path)
+    events_data = load_config(events_path)
     
-    logger.info(f"Loading incidence from {incidence_file}")
-    df_inc = pd.read_csv(incidence_file)
+    regimens = load_regimens(regimens_data)
     
-    # Pre-process Data
-    # Ensure Date column
-    if 'Date' not in df_inc.columns:
-        if 'Year' in df_inc.columns and 'Month' in df_inc.columns:
-            logger.info("Creating Date column from Year/Month...")
-            df_inc['Date'] = pd.to_datetime(
-                df_inc['Year'].astype(str) + '-' + df_inc['Month'].astype(str) + '-01'
-            )
-        else:
-            raise ValueError("Input data missing 'Date' column and cannot reconstruct from Year/Month.")
-            
-    df_inc['Date'] = pd.to_datetime(df_inc['Date'])
+    df_inc = pd.read_csv(inc_file)
     
-    # Identify Incidence Column
-    inc_col = None
-    for col in ['Monthly_Cases', 'monthly_cases', 'Count', 'count']:
-        if col in df_inc.columns:
-            inc_col = col
-            break
-            
-    if not inc_col:
-        raise ValueError(f"Could not identify monthly incidence column. Available: {df_inc.columns}")
-        
-    logger.info(f"Using '{inc_col}' as incidence column.")
-    
-    # Aggregate to total monthly incidence (removing demographic splits)
-    df_agg = df_inc.groupby('Date')[inc_col].sum().reset_index()
-    df_agg.rename(columns={inc_col: 'Combined_Incidence'}, inplace=True)
-    
-    # Run Model
-    df_results = run_simulation(df_agg, params)
-    
-    # Output
-    # Create outputs folder relative to script or root? Prompt says "creates outputs/ folder if missing". 
-    # Usually implies project root outputs or relative to execution.
-    # We will use project_root/outputs
-    output_dir = base_dir / "outputs"
-    output_dir.mkdir(exist_ok=True)
-    
-    out_path = output_dir / "mm_lot_monthly.csv"
-    df_results.to_csv(out_path, index=False)
-    logger.info(f"Saved results to {out_path}")
-    
-    # Validation prints
-    print("\n--- Validation ---")
-    print(f"Date Range: {df_results['Date'].min().date()} to {df_results['Date'].max().date()}")
-    print("Non-negative integrity check:")
-    cols = ['On_1L', 'On_2L', 'On_3L_plus']
-    if (df_results[cols] < 0).any().any():
-        print("FAIL: Negative values detected.")
+    # Robust Date Parsing
+    if 'Date' in df_inc.columns:
+        df_inc['Date'] = pd.to_datetime(df_inc['Date'])
+    elif 'Year' in df_inc.columns and 'Month' in df_inc.columns:
+        df_inc['Date'] = pd.to_datetime(df_inc[['Year', 'Month']].assign(DAY=1))
     else:
-        print("PASS: All stocks non-negative.")
-        
-    print(f"Rows match input: {len(df_results) == len(df_agg)} ({len(df_results)} rows)")
+         df_inc['Date'] = pd.to_datetime(df_inc.iloc[:, 0])
+             
+    cols = df_inc.columns
+    target = 'Monthly_Cases' if 'Monthly_Cases' in cols else ('Count' if 'Count' in cols else cols[-1])
     
-    print("\n--- Tail ---")
-    print(df_results.tail())
+    if target in df_inc.columns:
+        df_agg = df_inc.groupby('Date')[target].sum().reset_index()
+        df_agg.rename(columns={target: 'Combined_Incidence'}, inplace=True)
+    else:
+        df_agg = df_inc.copy()
+        df_agg.rename(columns={df_agg.columns[1]: 'Combined_Incidence'}, inplace=True)
+
+    # --- PROJECTION LOGIC ---
+    max_date = df_agg['Date'].max()
+    target_end_year = 2026
+    
+    if max_date.year < target_end_year:
+        logger.info(f"Extending incidence from {max_date.date()} to {target_end_year}-12-31")
+        last_year_data = df_agg[df_agg['Date'].dt.year == max_date.year].copy()
+        
+        projected_frames = [df_agg]
+        years_to_add = range(max_date.year + 1, target_end_year + 1)
+        
+        for yr in years_to_add:
+            df_new = last_year_data.copy()
+            df_new['Date'] = df_new['Date'] + pd.DateOffset(years=(yr - max_date.year))
+            projected_frames.append(df_new)
+            
+        df_agg = pd.concat(projected_frames).sort_values('Date').reset_index(drop=True)
+        # Handle Potential Duplicates if logic imperfect (e.g. partial year)
+        df_agg = df_agg.drop_duplicates(subset='Date', keep='first')
+        
+    results = run_simulation(df_agg, params, regimens, events_data)
+    
+    out_dir = root_dir / "outputs"
+    out_dir.mkdir(exist_ok=True)
+    results.to_csv(out_dir / "mm_detailed_simulation.csv", index=False)
+    logger.info("Simulation Complete. Results saved.")
 
 if __name__ == "__main__":
     main()
