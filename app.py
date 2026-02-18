@@ -17,7 +17,7 @@ import yaml, io
 from data_loader import (load_simulation, load_params, load_regimens_yaml,
                           get_regimen_columns, auto_discover_paths,
                           TOTAL_COLS, LINE_LABELS)
-from metrics import (compute_occupancy, compute_transition_rates,
+from model_metrics import (compute_occupancy, compute_transition_rates,
                      compute_regimen_shares, compute_sankey_data,
                      compute_duration_stats, generate_insights,
                      tornado_sensitivity, compute_yoy_trends,
