@@ -71,11 +71,11 @@ def run_simulation(df_inc, params, regimens, events):
     cohorts: List[Cohort] = []
     results_list = []
     
-    frac_te = 0.4 
+    frac_te = params.get('uptake_definitions', {}).get('fraction_transplant_eligible', 0.4)
     delay_months = int(params['uptake'].get('dx_to_1l_delay_months', 1))
     p_reach_2l = params['attrition']['p_reach_2l']
     p_reach_3l = params['attrition'].get('p_reach_3l_given_2l', 0.6)
-    p_reach_4l = 0.5 
+    p_reach_4l = params.get('attrition_definitions', {}).get('p_reach_4l_given_3l', 0.5) 
     
     inc_map = df_inc.set_index('Date')['Combined_Incidence'].to_dict()
     
@@ -203,38 +203,26 @@ def run_simulation(df_inc, params, regimens, events):
 def main():
     base_dir = Path(__file__).resolve().parent
     
-    if (base_dir / "params.yaml").exists():
-        params_path = base_dir / "params.yaml"
-    else:
-        params_path = base_dir.parent / "params.yaml"
-
-    if not params_path.exists():
-        raise FileNotFoundError(f"params.yaml not found in {base_dir} or parent")
-
     root_dir = base_dir.parent 
-    regimens_path = root_dir / "regimens.yaml"
-    events_path = root_dir / "events.yaml"
     
+    # Strict path resolution - no fallbacks to root
+    params_path = base_dir / "params.yaml"
+    regimens_path = base_dir / "regimens.yaml"
+    events_path = base_dir / "events.yaml"
+    
+    if not params_path.exists():
+        raise FileNotFoundError(f"params.yaml not found in {base_dir}")
     if not regimens_path.exists():
-        regimens_path = base_dir / "regimens.yaml"
-        if not regimens_path.exists():
-             raise FileNotFoundError(f"regimens.yaml not found")
-             
+        raise FileNotFoundError(f"regimens.yaml not found in {base_dir}")
     if not events_path.exists():
-         events_path = base_dir / "events.yaml"
-
-    inc_file = root_dir / "outputs/uscs_myeloma_incidence_monthly.csv"
-    if not inc_file.exists():
-        inc_file = root_dir / "Myeloma/outputs/uscs_myeloma_incidence_monthly.csv"
-    if not inc_file.exists():
-        search = list(root_dir.glob("**/uscs_myeloma_incidence_monthly.csv"))
-        if search: inc_file = search[0]
+        raise FileNotFoundError(f"events.yaml not found in {base_dir}")
         
+    inc_file = base_dir / "outputs/uscs_myeloma_incidence_monthly.csv"
     if not inc_file.exists():
-        logger.error("Incidence file not found.")
+        logger.error(f"Incidence file not found at {inc_file}")
         return
 
-    logger.info(f"Loading config from {root_dir}")
+    logger.info(f"Loading config from {base_dir}")
     params = load_config(params_path)
     regimens_data = load_config(regimens_path)
     events_data = load_config(events_path)
@@ -283,7 +271,7 @@ def main():
         
     results = run_simulation(df_agg, params, regimens, events_data)
     
-    out_dir = root_dir / "outputs"
+    out_dir = base_dir / "outputs"
     out_dir.mkdir(exist_ok=True)
     results.to_csv(out_dir / "mm_detailed_simulation.csv", index=False)
     logger.info("Simulation Complete. Results saved.")

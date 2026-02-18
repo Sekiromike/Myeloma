@@ -15,3 +15,10 @@ mortality:
   monthly_death_hazard_1l: 0.003
   monthly_death_hazard_2l: 0.006
   monthly_death_hazard_3l_plus: 0.015
+
+# Added during Audit
+uptake_definitions:
+  fraction_transplant_eligible: 0.40 # Standard US approximation (~30-50% depending on age cutoff)
+
+attrition_definitions:
+  p_reach_4l_given_3l: 0.50 # Assumption; attrition typically high in later lines

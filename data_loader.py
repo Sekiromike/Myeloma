@@ -62,26 +62,25 @@ def _find_file(search_dirs: list, candidates: list) -> Path | None:
 
 
 def auto_discover_paths(base: Path) -> Dict[str, Path]:
-    """Discover data paths.  Works for:
-       - Local:  base = Myeloma/,  data in Myeloma/ or parent
-       - Cloud:  base = /mount/src/myeloma/,  everything at base
+    """Discover data paths.  Strictly looks in the `base` directory (e.g. Myeloma/).
+       Removes ambiguity by not searching parent directories.
     """
-    parent = base.parent
-    search = [base, parent]                      # local layout
-    search += [Path('/mount/src/myeloma')]        # Streamlit Cloud fallback
+    search = [base]
+    # Streamlit Cloud fallback (if needed, keep distinct)
+    if Path('/mount/src/myeloma').exists():
+        search.append(Path('/mount/src/myeloma'))
 
     paths: Dict[str, Path] = {}
 
     sim = _find_file(search, [
         Path('outputs/mm_detailed_simulation.csv'),
-        Path('outputs') / 'mm_detailed_simulation.csv',
+        Path('mm_detailed_simulation.csv'), # in case it's flat in container
     ])
     if sim:
         paths['simulation'] = sim
 
     legacy = _find_file(search, [
         Path('outputs/mm_lot_monthly.csv'),
-        Path('Myeloma/outputs/mm_lot_monthly.csv'),
     ])
     if legacy:
         paths['legacy'] = legacy

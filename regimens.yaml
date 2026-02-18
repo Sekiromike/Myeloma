@@ -146,7 +146,60 @@ regimens:
     citation: "Richardson et al. (OPTIMISMM), Lancet Oncol 2019"
     adoption:
         peak_share: 0.15
+  - name: "PVd_3L"
+    line: "3L"
+    eligibility: "Both"
+    components: ["Pomalidomide", "Bortezomib", "Dexamethasone"]
+    approval_year: 2017
+    pfs_median: 11.2
+    citation: "Richardson et al. (OPTIMISMM), Lancet Oncol 2019"
+    adoption:
+        peak_share: 0.20
         speed: 1.0
+
+  - name: "DKd_3L"
+    line: "3L"
+    eligibility: "Both"
+    components: ["Daratumumab", "Carfilzomib", "Dexamethasone"]
+    approval_year: 2020
+    pfs_median: 28.6
+    citation: "Dimopoulos et al. (CANDOR), Lancet 2020"
+    adoption:
+        peak_share: 0.20
+        speed: 1.2
+
+  - name: "Kd_3L"
+    line: "3L"
+    eligibility: "Both"
+    components: ["Carfilzomib", "Dexamethasone"]
+    approval_year: 2016
+    pfs_median: 18.7
+    citation: "Dimopoulos et al. (ENDEAVOR), Lancet Oncol 2016"
+    adoption:
+        peak_share: 0.10
+        speed: 1.0
+
+  - name: "Elo-Pd"
+    line: "3L"
+    eligibility: "Both"
+    components: ["Elotuzumab", "Pomalidomide", "Dexamethasone"]
+    approval_year: 2018
+    pfs_median: 10.3
+    citation: "Dimopoulos et al. (ELOQUENT-3), NEJM 2018"
+    adoption:
+        peak_share: 0.10
+        speed: 1.0
+
+  - name: "Selinexor-Vd_3L"
+    line: "3L"
+    eligibility: "Both"
+    components: ["Selinexor", "Bortezomib", "Dexamethasone"]
+    approval_year: 2020
+    pfs_median: 13.9
+    citation: "Grosicki et al. (BOSTON), Lancet 2020"
+    adoption:
+        peak_share: 0.05
+        speed: 0.8
 
   - name: "Isa-Pd"
     line: "3L"
