@@ -22,8 +22,12 @@ NOW_YEAR = 2026            # "today" for KPIs (data vintage: October 2026)
 TODAY = pd.Timestamp('2026-10-01')
 LAST_OBS_YEAR = 2022       # last year of observed USCS incidence
 
-st.set_page_config(page_title="Myeloma Forecast Studio", page_icon="📈",
-                   layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(
+    page_title="Multiple Myeloma Forecast Studio · US Epidemiology & Treatment Forecast",
+    page_icon="📈", layout="wide", initial_sidebar_state="expanded",
+    menu_items={'About': "Multiple Myeloma Forecast Studio: interactive US myeloma epidemiology and "
+                         "line-of-therapy forecast to 2035. Methods and references: "
+                         "https://sekiromike.github.io/multiple-myeloma.html"})
 
 # ══════════════════════════════════════════════════════════════════
 #  DESIGN SYSTEM
