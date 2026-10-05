@@ -1,24 +1,45 @@
+# ════════════════════════════════════════════════════════════════════
+#  Base-case model parameters (US multiple myeloma, data as of Oct 2026)
+#  Every value is exposed as a scenario lever in the dashboard sidebar.
+# ════════════════════════════════════════════════════════════════════
+
+horizon:
+  start_year: 1999          # first year of observed USCS incidence
+  burn_in_years: 15         # back-cast years simulated before 1999 then discarded
+  end_year: 2035            # forecast horizon
+
+incidence:
+  method: demographic       # demographic | trend | flat
+  base_years: [2017, 2018, 2019, 2021, 2022]   # 2020 excluded (COVID under-diagnosis)
+  rate_trend_pct: 0.0       # annual change in age/sex-specific rates beyond ageing
+  # External benchmark: ACS Cancer Statistics 2026 (Siegel et al., CA Cancer J Clin 2026)
+  acs_benchmark: {year: 2026, cases: 36000, deaths: 10850}
+  anchor_to_acs: false      # true = scale the series to hit the ACS 2026 estimate
+
 uptake:
-  treated_fraction: 0.85
-  dx_to_1l_delay_months: 1   # ~28 days is a common median in US data
+  treated_fraction: 0.85    # registry cases starting 1L (excludes smoldering & frail untreated)
+  dx_to_1l_delay_months: 1  # median diagnosis-to-treatment ~4 weeks in US data
+  fraction_transplant_eligible: 0.35   # US ASCT utilisation ~30–40% of NDMM
 
-attrition:
-  p_reach_2l: 0.70
-  p_reach_3l_given_2l: 0.70  # attrition exists; tune in calibration
+attrition:                  # P(start next line | progression on current line)
+  p_reach_2l: 0.80
+  p_reach_3l_given_2l: 0.75
+  p_reach_4l_given_3l: 0.65
+  p_next_given_4l: 0.55     # re-entry into 4L+ (5L, 6L, ...) after progression
+  progression_to_next_line_months: 1
 
-durations_months_median:
-  1l: 24       # TTNT/TNTD often ~17–24+ months depending on era/regimen
-  2l: 16       # TTNT ~16.6 months reported in real-world cohorts
-  3l_plus: 6   # later-line TTNT often ~5–6 months in refractory settings
+effectiveness:
+  rwe_pfs_multiplier: 0.85  # real-world PFS/TTNT as a fraction of trial PFS
+  new_launch_speed_multiplier: 1.0   # scales uptake speed of launches from 2024 on
 
-mortality:
+mortality:                  # monthly death hazard while on a line (pre-progression)
   monthly_death_hazard_1l: 0.003
   monthly_death_hazard_2l: 0.006
-  monthly_death_hazard_3l_plus: 0.015
+  monthly_death_hazard_3l: 0.010
+  monthly_death_hazard_4l_plus: 0.018
+  multiplier: 1.0
 
-# Added during Audit
-uptake_definitions:
-  fraction_transplant_eligible: 0.40 # Standard US approximation (~30-50% depending on age cutoff)
-
-attrition_definitions:
-  p_reach_4l_given_3l: 0.50 # Assumption; attrition typically high in later lines
+durations_months_median:    # real-world TTNT reference values (display only)
+  1l: 24
+  2l: 16
+  3l_plus: 6
