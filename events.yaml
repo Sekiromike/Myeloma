@@ -1,96 +1,198 @@
+# US regulatory milestones in multiple myeloma (FDA), 2015 – Oct 2026.
+# type: Approval | Label expansion | Withdrawal | Pending
 events:
   - date: "2015-11-16"
-    name: "Daratumumab (Monotherapy)"
-    type: "Approval"
-    details: "FDA approved for patients who have received at least three prior lines of therapy."
+    name: "Daratumumab monotherapy"
+    type: Approval
+    line: 4L+
+    details: "First anti-CD38 antibody; ≥3 prior lines including a PI and an IMiD."
     source: "FDA"
 
   - date: "2015-11-20"
-    name: "Ixazomib (with Rd)"
-    type: "Approval"
-    details: "FDA approved in combination with lenalidomide and dexamethasone for patients who have received at least one prior therapy."
+    name: "Ixazomib + Rd"
+    type: Approval
+    line: 2L
+    details: "First oral PI; ≥1 prior therapy (TOURMALINE-MM1)."
     source: "FDA"
 
   - date: "2015-11-30"
-    name: "Elotuzumab (with Rd)"
-    type: "Approval"
-    details: "FDA approved in combination with lenalidomide and dexamethasone for patients who have received one to three prior therapies."
+    name: "Elotuzumab + Rd"
+    type: Approval
+    line: 2L
+    details: "SLAMF7 antibody; 1–3 prior therapies (ELOQUENT-2)."
     source: "FDA"
 
   - date: "2016-11-21"
-    name: "Daratumumab (DVd, DRd)"
-    type: "Approval"
-    details: "FDA approved in combination with lenalidomide/dexamethasone or bortezomib/dexamethasone for patients with at least one prior therapy."
+    name: "Daratumumab + Rd / Vd"
+    type: Label expansion
+    line: 2L
+    details: "≥1 prior therapy (POLLUX, CASTOR)."
+    source: "FDA"
+
+  - date: "2019-06-27"
+    name: "Daratumumab + Rd (NDMM, TI)"
+    type: Label expansion
+    line: 1L
+    details: "Transplant-ineligible newly diagnosed MM (MAIA)."
     source: "FDA"
 
   - date: "2019-07-03"
-    name: "Selinexor (Sd)"
-    type: "Approval"
-    details: "FDA approved in combination with dexamethasone for adult patients with relapsed or refractory multiple myeloma (penta-refractory)."
+    name: "Selinexor + dex"
+    type: Approval
+    line: 4L+
+    details: "Penta-refractory disease (STORM); SVd added Dec 2020 (BOSTON)."
     source: "FDA"
 
   - date: "2019-09-26"
-    name: "Daratumumab (D-VTd)"
-    type: "Approval"
-    details: "FDA approved in combination with bortezomib, thalidomide, and dexamethasone for newly diagnosed patients who are eligible for autologous stem cell transplant."
+    name: "Daratumumab + VTd (NDMM, TE)"
+    type: Label expansion
+    line: 1L
+    details: "Transplant-eligible NDMM (CASSIOPEIA); thalidomide-based induction is rarely used in the US."
     source: "FDA"
 
   - date: "2020-03-02"
-    name: "Isatuximab (Isa-Pd)"
-    type: "Approval"
-    details: "FDA approved in combination with pomalidomide and dexamethasone for adult patients who have received at least two prior therapies including lenalidomide and a proteasome inhibitor."
+    name: "Isatuximab + Pd"
+    type: Approval
+    line: 3L
+    details: "≥2 prior therapies including lenalidomide and a PI (ICARIA-MM)."
+    source: "FDA"
+
+  - date: "2020-08-05"
+    name: "Belantamab mafodotin monotherapy"
+    type: Approval
+    line: 4L+
+    details: "Accelerated approval, ≥4 prior therapies (DREAMM-2)."
     source: "FDA"
 
   - date: "2020-08-20"
-    name: "Belantamab mafodotin"
-    type: "Approval"
-    details: "FDA approved for adult patients with relapsed or refractory multiple myeloma who have received at least four prior therapies."
+    name: "Daratumumab + Kd"
+    type: Label expansion
+    line: 2L
+    details: "1–3 prior lines (CANDOR)."
     source: "FDA"
 
   - date: "2021-03-26"
     name: "Ide-cel (Abecma)"
-    type: "Approval"
-    details: "FDA approved as first cell-based gene therapy for adult patients with multiple myeloma who have received at least four prior lines of therapy."
+    type: Approval
+    line: 4L+
+    details: "First BCMA CAR-T; ≥4 prior lines (KarMMa)."
     source: "FDA"
-  
+
   - date: "2021-03-31"
-    name: "Isatuximab (Isa-Kd)"
-    type: "Approval"
-    details: "FDA approved in combination with carfilzomib and dexamethasone for adult patients with relapsed or refractory multiple myeloma who have received one to three prior lines of therapy."
+    name: "Isatuximab + Kd"
+    type: Label expansion
+    line: 2L
+    details: "1–3 prior lines (IKEMA)."
     source: "FDA"
 
   - date: "2022-02-28"
     name: "Cilta-cel (Carvykti)"
-    type: "Approval"
-    details: "FDA approved for adult patients with relapsed or refractory multiple myeloma after four or more prior lines of therapy."
+    type: Approval
+    line: 4L+
+    details: "≥4 prior lines (CARTITUDE-1)."
     source: "FDA"
 
   - date: "2022-10-25"
     name: "Teclistamab (Tecvayli)"
-    type: "Approval"
-    details: "FDA approved for adult patients with relapsed or refractory multiple myeloma who have received at least four prior lines of therapy."
+    type: Approval
+    line: 4L+
+    details: "First BCMA×CD3 bispecific; accelerated approval, ≥4 prior lines (MajesTEC-1)."
     source: "FDA"
+
+  - date: "2022-11-22"
+    name: "Belantamab mafodotin withdrawn"
+    type: Withdrawal
+    line: 4L+
+    details: "US marketing authorisation withdrawn after DREAMM-3 missed its PFS endpoint."
+    source: "GSK / FDA"
 
   - date: "2023-08-09"
     name: "Talquetamab (Talvey)"
-    type: "Approval"
-    details: "FDA approved for adult patients with relapsed or refractory multiple myeloma who have received at least four prior lines of therapy."
+    type: Approval
+    line: 4L+
+    details: "First GPRC5D×CD3 bispecific; ≥4 prior lines (MonumenTAL-1)."
     source: "FDA"
-    
+
   - date: "2023-08-14"
     name: "Elranatamab (Elrexfio)"
-    type: "Approval"
-    details: "FDA approved for adult patients with relapsed or refractory multiple myeloma who have received at least four prior lines of therapy."
+    type: Approval
+    line: 4L+
+    details: "BCMA×CD3 bispecific; ≥4 prior lines (MagnetisMM-3)."
     source: "FDA"
-  
-  - date: "2024-04-05"
-    name: "Cilta-cel (Earlier Lines)"
-    type: "Approval"
-    details: "FDA approved for adult patients with relapsed or refractory multiple myeloma who have received at least one prior line of therapy."
-    source: "FDA / CARTITUDE-4"
 
   - date: "2024-04-05"
-    name: "Ide-cel (Earlier Lines)"
-    type: "Approval"
-    details: "FDA approved for adult patients with relapsed or refractory multiple myeloma who have received at least two prior lines of therapy."
-    source: "FDA / KarMMa-3"
+    name: "Cilta-cel moves to 2L"
+    type: Label expansion
+    line: 2L
+    details: "≥1 prior line incl. a PI and an IMiD, lenalidomide-refractory (CARTITUDE-4)."
+    source: "FDA"
+
+  - date: "2024-04-05"
+    name: "Ide-cel moves to 3L"
+    type: Label expansion
+    line: 3L
+    details: "≥2 prior lines incl. an IMiD, a PI and an anti-CD38 (KarMMa-3)."
+    source: "FDA"
+
+  - date: "2024-07-30"
+    name: "D-VRd (NDMM, transplant-eligible)"
+    type: Label expansion
+    line: 1L
+    details: "Daratumumab SC + VRd induction/consolidation (PERSEUS)."
+    source: "FDA"
+
+  - date: "2024-09-20"
+    name: "Isa-VRd (NDMM, transplant-ineligible)"
+    type: Label expansion
+    line: 1L
+    details: "First anti-CD38 quadruplet for TI NDMM (IMROZ)."
+    source: "FDA"
+
+  - date: "2025-07-02"
+    name: "Linvoseltamab (Lynozyfic)"
+    type: Approval
+    line: 4L+
+    details: "Fourth BCMA×CD3 bispecific; accelerated approval, ≥4 prior lines (LINKER-MM1)."
+    source: "FDA"
+
+  - date: "2025-10-23"
+    name: "Belantamab mafodotin + Vd returns"
+    type: Approval
+    line: 3L
+    details: "BVd for ≥2 prior lines incl. a PI (DREAMM-7); ocular-toxicity REMS."
+    source: "FDA"
+
+  - date: "2025-11-06"
+    name: "Daratumumab SC (high-risk smoldering MM)"
+    type: Approval
+    line: SMM
+    details: "First approved therapy to intercept high-risk smoldering myeloma (AQUILA). Not modelled (pre-MM)."
+    source: "FDA"
+
+  - date: "2026-01-27"
+    name: "D-VRd (NDMM, transplant-ineligible)"
+    type: Label expansion
+    line: 1L
+    details: "Daratumumab SC + VRd for TI/deferred-transplant NDMM (CEPHEUS)."
+    source: "FDA"
+
+  - date: "2026-03-05"
+    name: "Teclistamab + daratumumab (2L+)"
+    type: Label expansion
+    line: 2L
+    details: "First bispecific at first relapse, ≥1 prior line incl. a PI and an IMiD (MajesTEC-3, PFS HR 0.17); teclistamab monotherapy converted to full approval."
+    source: "FDA"
+
+  - date: "2026-07-09"
+    name: "Isatuximab SC (Sarclisa Escena)"
+    type: Label expansion
+    line: 2L
+    details: "Subcutaneous isatuximab for the Isa-Pd and Isa-Kd indications. Formulation change; not modelled separately."
+    source: "FDA"
+
+  - date: "2026-12-23"
+    name: "Anito-cel (BCMA CAR-T) — PDUFA date"
+    type: Pending
+    line: 4L+
+    details: "BLA under review for ≥4 prior lines (iMMagine-1). Not included in the base-case forecast."
+    source: "Arcellx / Kite"
